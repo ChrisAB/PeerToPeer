@@ -56,7 +56,7 @@ int verifyIntegrity(char *filePath, int pieceLength, int pieceIndex, char* initi
 	unsigned char hash[SHA_DIGEST_LENGTH];
 	char *bytes = readFromFile(filePath, pieceLength, pieceIndex);
 
-	if (initialSHA == SHA1(bytes, sizeof(bytes), hash){
+	if (initialSHA == SHA1(bytes, sizeof(bytes), hash)){
 		return 1;
 	}
 	return 0;
