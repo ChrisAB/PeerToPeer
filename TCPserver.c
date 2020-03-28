@@ -13,18 +13,20 @@
 #define SERVER_PORT 5678
 #define MAX_PENDING 10
 
+char *filePath;
+
 void keepAlive(int socketfd, char *info_hash) {
-    char *filePath = getFilePath();
-    int pieceLength = getPieceLength();
-    char *pieces = getPieces();
-    int fileLength = getFileLength();
+    const int blockSizeMax = 65536;
+    int pieceLength = getPieceLength(filePath);
+    char *pieces = getPieces(filePath);
+    int fileLength = getFileLength(filePath);
     int iterationsPerPiece = pieceLength/65536;
     int len = 0, id = 0;
     //Would be better if we were able to get all incomplete pieces
-    char *requested_piece = getIncompletePiece(filePath);
+    int requested_piece = getIncompletePiece(pieces,pieceLength,fileLength);
     int pieceIndex;
     int pieceBegin;
-    int pieceBlock;
+    char *pieceBlock;
     int blockLength;
     //Sees if there is any available message.
     //If there is, it's a request for a piece.
@@ -34,44 +36,58 @@ void keepAlive(int socketfd, char *info_hash) {
             while(len == 0x0013) {
                 //Someone is requestion a block
                 //Get all parameters and see if we have block
-                //If we have block, return the block
-                //Otherwise, return cancel with initial params
                 recv(socketfd,&id,4,0);
                 recv(socketfd,&pieceIndex,4,0);
                 recv(socketfd,&pieceBegin,4,0);
                 recv(socketfd,&blockLength,4,0);
-                pieceBlock = (char *)calloc(blockLength,sizeof(char));
+                //If we have block, return the block
                 if(verifyIfHasPiece(filePath,pieceLength,pieceIndex,getIntialSHA(pieces,pieceLength,pieceIndex)) == 1) {
-                    //Send files
+                    len = 0x0009 + blockLength;
+                    id = 0x7;
+                    pieceBlock = (char *)calloc(blockLength,sizeof(char));
+                    pieceBlock = readFromFile(filePath,blockLength,pieceIndex+pieceBegin);
+                    send(socketfd,&len,4,0);
+                    send(socketfd,&id,4,0);
+                    send(socketfd,&pieceIndex,4,0);
+                    send(socketfd,&pieceBegin,4,0);
+                    send(socketfd,&pieceBlock,blockLength,0);
+                //Otherwise, return cancel with initial params
                 } else {
-                    //Send cancel
+                    send(socketfd,&len,4,0);
+                    send(socketfd,&id,4,0);
+                    send(socketfd,&pieceIndex,4,0);
+                    send(socketfd,&pieceBegin,4,0);
+                    send(socketfd,&blockLength,4,0);
+                    break;
                 }
+                recv(socketfd,&len,4,0);
             }
         }
-        pieceIndex = getPieceIndex(requested_piece);
-        while(requested_piece != NULL) {
+        while(requested_piece != 0) {
             len = 0x0013;
             id = 0x6;
             for(int i=0; i<=iterationsPerPiece;i++) {
-                send(socketfd,len,4,0);
-                send(socketfd,id,1,0);
-                send(socketfd,pieceIndex,4,0);
-                send(socketfd,i*iterationsPerPiece,4,0);
-                send(socketfd,65536,4,0);
+                send(socketfd,&len,4,0);
+                send(socketfd,&id,1,0);
+                send(socketfd,&pieceIndex,4,0);
+                pieceBegin = i*iterationsPerPiece;
+                send(socketfd,&pieceBegin,4,0);
+                send(socketfd,&blockSizeMax,4,0);
             }
             recv(socketfd,&len,4,0);
             while(len != 0x0013) {
                 len = len - 0x0009;
-                recv(socketfd,id,4,0);
+                recv(socketfd,&id,4,0);
                 if(id != 0x7)
                     return;
                 recv(socketfd,&pieceIndex,4,0);
                 recv(socketfd,&pieceBegin,4,0);
+                pieceBlock = (char *)calloc(len,sizeof(char));
                 recv(socketfd,&pieceBlock,len,0);
                 writeToFile(filePath,len,pieceIndex+pieceBegin,pieceBlock);
                 recv(socketfd,&len,4,0);
             }
-            if(len == 0x0009)
+            if(len == 0x0013)
                 break;
             requested_piece = getIncompletePiece(filePath);
         }
@@ -105,12 +121,12 @@ char *waitForHandshake(int socketfd) {
 }
 
 // CREATE A SOCKET
-int main(void){
-
+int main(int argc, char **argv){
     int sockfd, newsockfd;
     struct sockaddr_in serv_addr, client_addr;
     socklen_t cLen;
 
+    filePath = argv[1];
     if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0){
     		perror("Error at socket opening");
     		exit(1);
@@ -125,7 +141,7 @@ int main(void){
     }
 
     //LISTEN
-    if (listen(sockfs, MAX_PENDING) < 0){
+    if (listen(sockfd, MAX_PENDING) < 0){
         perror("Error: Binding Failed"); 
         exit(1);
     }
@@ -148,7 +164,6 @@ int main(void){
             if(response != NULL) {
                 keepAlive(newsockfd,response);
             }
-            
             exit(0);
         }
          
