@@ -7,7 +7,8 @@ void preallocateFile(char *filePath, long long bytes) {
 	
 	FILE *file;
 	file = fopen(filePath, "w");
-	fseek(file, bytes, SEEK_SET);
+	fseek(file, bytes-1, SEEK_SET);
+	fputc('1', file);
 	fputc('\0', file);
 	fclose(file);
 }
@@ -24,8 +25,8 @@ void writeToFile(char *filePath, int pieceLength, int pieceIndex, char *bytes) {
 		exit(1);
 	}
 
-	fseek(file, pieceIndex*pieceLength, SEEK_SET);
-	fwrite(bytes, pieceLength, 1, filePath);
+	fseek(file, pieceIndex, SEEK_SET);
+	fwrite(bytes, pieceLength, sizeof(char), file);
 
 	fclose(file);
 }
@@ -41,9 +42,9 @@ char *readFromFile(char *filePath, int pieceLength, int pieceIndex) {
 		exit(1);
 	}
 
-	fseek(file, pieceIndex*pieceLength, SEEK_SET);
+	fseek(file, pieceIndex, SEEK_SET);
 	char *bytes = (char*)malloc(pieceLength);
-	fread(bytes, pieceLength, 1, filePath);
+	fread(bytes, pieceLength, sizeof(char), filePath);
 	
 	return bytes;
 }

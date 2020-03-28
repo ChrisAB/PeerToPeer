@@ -321,4 +321,12 @@ void readFile(FILE *f) {
     }
     printBencodeList(head);
 }
+
+char *bencodeString(char *str) {
+    int len = strlen(str);
+    char *newStr = sizeof((21+1+len)*sizeof(char));
+    sprintf(newStr, "%d:%s",len,str);
+    return newStr;
+}
+
 #endif

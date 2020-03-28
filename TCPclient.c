@@ -11,6 +11,30 @@
 #define SERVER_ADDRESS '127.0.0.1'
 #define SERVER_PORT 5678
 
+void sendHandshake(int socketfd) {
+    int pstrlen = 19;
+    char *pstr = bencodeString("BitTorrent protocol");
+    char *reserved = (char *)calloc(8*sizeof(char));
+    sprintf(reserved, "00000000");
+    char *info_hash = getInfoHash();
+    char *peerID = "DP123456789123456789";
+    send(socketfd,&pstrlen,4,0);
+    send(socketfd,pstr,pstrlen,0);
+    send(socketfd,reserved,8,0);
+    send(socketfd,info_hash,20,0);
+    send(socketfd,peerID,20,0);
+    int pstrlenR;
+    char *reservedR = (char *)calloc(8,sizeof(char));
+    char *info_hashR = (char *)calloc(20,sizeof(char));
+    char *peerIDR = (char *)calloc(20,sizeof(char));
+    recv(socketfd,&pstrlenR,4,0);
+    char *pstrR = (char *)calloc(pstrlen,sizeof(char));
+    recv(socketfd,pstrR,pstrlen,0);
+    recv(socketfd,reservedR,8,0);
+    recv(socketfd,info_hashR,20,0);
+    recv(socketfd,peerIDR,20,0);
+}
+
 int main(int argc, char *argv[]){
     int sockfd;
     struct sockaddr_in local_addr, remote_addr;
