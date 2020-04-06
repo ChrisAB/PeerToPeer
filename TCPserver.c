@@ -120,17 +120,46 @@ char *waitForHandshake(int socketfd) {
     return info_hash;
 }
 
+void sendHandshake(int socketfd) {
+    int pstrlen = 19;
+    char *pstr = bencodeString("BitTorrent protocol");
+    char *reserved = (char *)calloc(8,sizeof(char));
+    sprintf(reserved, "00000000");
+    char *info_hash = getInfoHash();
+    char *peerID = "DP123456789123456789";
+    send(socketfd,&pstrlen,4,0);
+    send(socketfd,pstr,pstrlen,0);
+    send(socketfd,reserved,8,0);
+    send(socketfd,info_hash,20,0);
+    send(socketfd,peerID,20,0);
+    int pstrlenR;
+    char *reservedR = (char *)calloc(8,sizeof(char));
+    char *info_hashR = (char *)calloc(20,sizeof(char));
+    char *peerIDR = (char *)calloc(20,sizeof(char));
+    recv(socketfd,&pstrlenR,4,0);
+    char *pstrR = (char *)calloc(pstrlen,sizeof(char));
+    recv(socketfd,pstrR,pstrlen,0);
+    recv(socketfd,reservedR,8,0);
+    recv(socketfd,info_hashR,20,0);
+    recv(socketfd,peerIDR,20,0);
+}
+
 // CREATE A SOCKET
 int main(int argc, char **argv){
     int sockfd, newsockfd;
-    struct sockaddr_in serv_addr, client_addr;
+    struct sockaddr_in serv_addr, client_addr, remote_addr;
     socklen_t cLen;
+    if(argc != 4) {
+        fprintf(stderr,"Format: ./a.exe host/connect filename IP");
+    }
 
-    filePath = argv[1];
+    filePath = argv[2];
+
     if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0){
     		perror("Error at socket opening");
     		exit(1);
     }
+    
     set_addr(&serv_addr, NULL, INADDR_ANY, SERVER_PORT)	;
 
     //ASSIGN A PORT TO SOCKET
@@ -141,36 +170,49 @@ int main(int argc, char **argv){
     }
 
     //LISTEN
-    if (listen(sockfd, MAX_PENDING) < 0){
-        perror("Error: Binding Failed"); 
-        exit(1);
-    }
-
-    //ACCEPT CONNECTIONS
-    for(;;){
-
-        //accept new connection
-        cLen = sizeof(client_addr);
-        newsockfd = acccept(sockfd, (struct sockaddr *)&client_addr, &cLen);
-        if (newsockfd < 0) {
-            perror ("Error: Can't accept req"); 
+    if(strcmp("host",argv[1]) == 0) {
+        if (listen(sockfd, MAX_PENDING) < 0){
+            perror("Error: Binding Failed"); 
             exit(1);
-         }
-
-         if (fork() == 0){ //prunc 
-             
-            close(sockfd);
-            char *response = waitForHandshake(newsockfd);
-            if(response != NULL) {
-                keepAlive(newsockfd,response);
-            }
-            exit(0);
         }
-         
-        //parinte
-        close(newsockfd);
 
-   
-    exit(0);
+        //ACCEPT CONNECTIONS
+        for(;;){
+
+            //accept new connection
+            cLen = sizeof(client_addr);
+            newsockfd = acccept(sockfd, (struct sockaddr *)&client_addr, &cLen);
+            if (newsockfd < 0) {
+                perror ("Error: Can't accept req"); 
+                exit(1);
+            }
+
+            if (fork() == 0){ //prunc 
+                
+                close(sockfd);
+                char *response = waitForHandshake(newsockfd);
+                if(response != NULL) {
+                    keepAlive(newsockfd,response);
+                }
+                exit(0);
+            }
+            
+            //parinte
+            close(newsockfd);
+
+    
+        exit(0);
+        }
+    } else {
+        set_addr(&remote_addr,  argv[3], 0, SERVER_PORT);
+
+        //establish connection
+        if((connect(sockfd, (struct sockaddr *)&remote_addr, sizeof(remote_addr)))< 0){
+            perror("Error: Connection to server Failed"); 
+            close(sockfd);
+            exit(1);
+        }
+        char *info_hash = sendHandshake(sockfd);
+        keepAlive(sockfd, info_hash);
     }
 }
