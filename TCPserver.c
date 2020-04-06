@@ -7,6 +7,7 @@
 #include <sys/types.h> 
 #include <unistd.h> 
 
+#include "metainfo.h"
 #include "netio.h"
 #include "writeFile.h"
 
@@ -32,7 +33,7 @@ void keepAlive(int socketfd, char *info_hash) {
     //If there is, it's a request for a piece.
     //If not, we can request our piece.
     while(1) {
-        if( recv(socketfd,&len,4,0) != EWOULDBLOCK) {
+        if( recv(socketfd,&len,4,0) != 0x0013) {
             while(len == 0x0013) {
                 //Someone is requestion a block
                 //Get all parameters and see if we have block
@@ -120,12 +121,12 @@ char *waitForHandshake(int socketfd) {
     return info_hash;
 }
 
-void sendHandshake(int socketfd) {
+char *sendHandshake(int socketfd) {
     int pstrlen = 19;
     char *pstr = bencodeString("BitTorrent protocol");
     char *reserved = (char *)calloc(8,sizeof(char));
     sprintf(reserved, "00000000");
-    char *info_hash = getInfoHash();
+    char *info_hash = "01234567890123456789";
     char *peerID = "DP123456789123456789";
     send(socketfd,&pstrlen,4,0);
     send(socketfd,pstr,pstrlen,0);
@@ -142,6 +143,7 @@ void sendHandshake(int socketfd) {
     recv(socketfd,reservedR,8,0);
     recv(socketfd,info_hashR,20,0);
     recv(socketfd,peerIDR,20,0);
+    return info_hash;
 }
 
 // CREATE A SOCKET
