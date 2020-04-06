@@ -23,7 +23,7 @@ void keepAlive(int socketfd, char *info_hash) {
     int iterationsPerPiece = pieceLength/65536;
     int len = 0, id = 0;
     //Would be better if we were able to get all incomplete pieces
-    int requested_piece = getIncompletePiece(pieces,pieceLength,fileLength);
+    int requested_piece = getIncompletePiece(pieces,pieceLength,fileLength, filePath);
     int pieceIndex;
     int pieceBegin;
     char *pieceBlock;
@@ -89,7 +89,7 @@ void keepAlive(int socketfd, char *info_hash) {
             }
             if(len == 0x0013)
                 break;
-            requested_piece = getIncompletePiece(filePath);
+            requested_piece = getIncompletePiece(pieces, pieceLength, pieceIndex, filePath);
         }
     }
 }

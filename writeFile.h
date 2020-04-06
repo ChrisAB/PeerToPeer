@@ -1,3 +1,5 @@
+#ifndef WRITEFILE_H
+#define WRITEFILE_H
 #include <stdio.h>
 #include <openssl/sha.h>
 
@@ -69,3 +71,4 @@ int verifyIntegrity(char *filePath, int pieceLength, int pieceIndex, char* initi
 int verifyIfHasPiece(char *filePath, int pieceLength, int pieceIndex, char *initialSHA) {
     return verifyIntegrity(filePath, pieceLength, pieceIndex, initialSHA) == 1 ? 1 : -1;
 }
+#endif
