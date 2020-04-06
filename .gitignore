@@ -1,3 +1,8 @@
 a.exe
 .\a.exe
 ./a.exe
+./bencoding.h.gch
+bencoding.h.gch
+./writeFile.h.gch
+writeFile.h.gch
+./metainfo.h.gch
