@@ -153,8 +153,9 @@ int main(int argc, char **argv){
     int sockfd, newsockfd;
     struct sockaddr_in serv_addr, client_addr, remote_addr;
     socklen_t cLen;
-    if(argc != 4) {
+    if(argc != 4 || ((strcmp(arv[1],"host") == 0) && (argc==3)) {
         fprintf(stderr,"Format: ./a.exe host/connect filename IP");
+        exit(-1);
     }
 
     filePath = argv[2];
