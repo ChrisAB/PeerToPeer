@@ -9,9 +9,9 @@
 
 typedef struct sokaddr_in Sokaddr_in;
 
-int set_addr(Sokaddr_in *addr, char *name, u_int32_t inaddr, short sin_port);
+int set_addr(struct sockaddr_in *addr, char *name, u_int32_t inaddr, short sin_port);
 
-int set_addr(Sokaddr_in *addr, char *name, u_int32_t inaddr, short sin_port){
+int set_addr(struct sockaddr_in *addr, char *name, u_int32_t inaddr, short sin_port){
     struct hostent *h;
 
     memset((void *)addr, 0, sizeof(*addr));
