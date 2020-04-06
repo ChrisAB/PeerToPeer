@@ -120,7 +120,6 @@ char *readString(FILE *f) {
     long long len = 0;
     char *str;
     fscanf(f,"%Ld",&len);
-    printf("%d\n",len);
     str = (char *)malloc(len+1);
     if(str == NULL)
         exitWithError(-90,"Not enough memory");
