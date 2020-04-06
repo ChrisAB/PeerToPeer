@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "writeFile.h"
+
 typedef struct Bencoding Bencoding;
 typedef struct listNode listNode;
 typedef struct dictNode dictNode;
@@ -324,7 +326,7 @@ void readFile(FILE *f) {
 
 char *bencodeString(char *str) {
     int len = strlen(str);
-    char *newStr = sizeof((21+1+len)*sizeof(char));
+    char *newStr = (char *)calloc((21+1+len),sizeof(char));
     sprintf(newStr, "%d:%s",len,str);
     return newStr;
 }

@@ -2,6 +2,8 @@
 #define WRITEFILE_H
 #include <stdio.h>
 #include <openssl/sha.h>
+#include <string.h>
+#include <stdlib.h>
 
 //Creates file with bytes size
 //This can be implemented in more than 1 way
@@ -46,7 +48,7 @@ char *readFromFile(char *filePath, int pieceLength, int pieceIndex) {
 
 	fseek(file, pieceIndex, SEEK_SET);
 	char *bytes = (char*)malloc(pieceLength);
-	fread(bytes, pieceLength, sizeof(char), filePath);
+	fread(bytes, pieceLength, sizeof(char), file);
 	
 	return bytes;
 }

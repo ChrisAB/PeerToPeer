@@ -16,6 +16,12 @@
 
 char *filePath;
 
+char *getInitialSHA(char * pieces, int pieceLength, int pieceIndex) {
+    char *piece = calloc(20,sizeof(char));
+    memcpy(piece,pieces+20*(pieceIndex/pieceIndex),20);
+    return piece;
+}
+
 void keepAlive(int socketfd, char *info_hash) {
     const int blockSizeMax = 65536;
     int pieceLength = getPieceLength(filePath);
@@ -42,7 +48,7 @@ void keepAlive(int socketfd, char *info_hash) {
                 recv(socketfd,&pieceBegin,4,0);
                 recv(socketfd,&blockLength,4,0);
                 //If we have block, return the block
-                if(verifyIfHasPiece(filePath,pieceLength,pieceIndex,getIntialSHA(pieces,pieceLength,pieceIndex)) == 1) {
+                if(verifyIfHasPiece(filePath,pieceLength,pieceIndex,getInitialSHA(pieces,pieceLength,pieceIndex)) == 1) {
                     len = 0x0009 + blockLength;
                     id = 0x7;
                     pieceBlock = (char *)calloc(blockLength,sizeof(char));
@@ -106,10 +112,6 @@ char *waitForHandshake(int socketfd) {
     recv(socketfd,reserved,8,0);
     recv(socketfd,info_hash,20,0);
     recv(socketfd,peerID,20,0);
-    if(haveInfoHash(info_hash) == 0) {
-        close(socketfd);
-        return NULL;
-    }
     send(socketfd,&pstrlen,4,0);
     send(socketfd,pstr,pstrlen,0);
     send(socketfd,reserved,8,0);
@@ -183,7 +185,7 @@ int main(int argc, char **argv){
 
             //accept new connection
             cLen = sizeof(client_addr);
-            newsockfd = acccept(sockfd, (struct sockaddr *)&client_addr, &cLen);
+            newsockfd = accept(sockfd, (struct sockaddr *)&client_addr, &cLen);
             if (newsockfd < 0) {
                 perror ("Error: Can't accept req"); 
                 exit(1);
